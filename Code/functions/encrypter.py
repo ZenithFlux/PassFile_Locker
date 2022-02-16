@@ -80,7 +80,12 @@ def key_convert_AES(key):
                 key =+ key[pos]
                 
     else:
-        key = key[:16]
+        # Below calculations are done so that the whole key has contribution in the AES key created
+        # even if the key is longer than 16 characters. (AES key is always 16 chars.)
+        x = ''
+        for i in range(31-len(key), len(key), 2):
+            x += key[i]
+        key = key[:31-len(key)] + x
     
     key = bytes(key, "utf-8")
     return key

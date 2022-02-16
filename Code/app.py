@@ -54,7 +54,7 @@ def passmode(data, key):
         passwords = data.passwords
         print("---- {0} ----\n--Password Section--".format(file.split('\\')[-1]))
         
-        if not bool(passwords):
+        if not passwords:
             print('\nNo password added yet...')
         
         else:
@@ -66,7 +66,7 @@ def passmode(data, key):
             del n
             print()
         
-        if bool(passwords):
+        if passwords:
             print('Enter the number of a site to view/change/delete your password entered for the site.')
         print("Type 'add' to add a new password.\nType 'f' to go into Files Section.\nType 'exit' to close the locker.")
         choice = input().lower()
@@ -106,7 +106,7 @@ def passmode(data, key):
             print('New password added successfully...\n')
             continue
          
-        elif not bool(passwords):
+        elif not passwords:
             clrscr()
             print('Invalid input!\n')
             continue
@@ -170,7 +170,7 @@ def filemode(data, key):
     while True:
         print("---- {0} ----\n--Files Section --".format(file.split('\\')[-1]))
         
-        if not bool(data.files):
+        if not data.files:
             print('\nNo Files found in the locker...')
         
         else:
@@ -182,7 +182,7 @@ def filemode(data, key):
             del n
             print()
         
-        if bool(data.files):
+        if data.files:
             print('Enter the number of a file to extract/rename/delete that file.')
             
         print("Type 'add' to add a new file.\nType 'p' to go into Password Section.\nType 'exit' to close the locker.")
@@ -230,7 +230,7 @@ def filemode(data, key):
         elif choice == 'exit':
             return True
             
-        elif not bool(data.files):
+        elif not data.files:
             clrscr()
             print('Invalid input!\n')
             continue
