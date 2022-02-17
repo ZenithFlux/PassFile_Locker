@@ -1,2 +1,2 @@
 @echo off
-pyinstaller -w --onefile --icon=functions\icon.ico gui.py
+pyinstaller -w --add-data=icon.ico;. --icon=icon.ico gui.py

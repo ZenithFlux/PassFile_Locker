@@ -294,7 +294,7 @@ def main():
     if len(sys.argv) >= 2:
         path = sys.argv[1]
         app = QApplication(sys.argv)
-        app.setWindowIcon(QIcon("functions\\icon.ico"))
+        app.setWindowIcon(QIcon("icon.ico"))
         
         while True:    
             key, ok = QInputDialog.getText(None, "Enter password", "Password:", QLineEdit.Password)
@@ -316,7 +316,7 @@ def main():
     
     # Following code will initiate the app if app is opened directly from .exe
     app = QApplication(sys.argv)
-    app.setWindowIcon(QIcon("functions\\icon.ico"))
+    app.setWindowIcon(QIcon("icon.ico"))
     win = FirstPage()
     win.show()
     sys.exit(app.exec_())
