@@ -118,6 +118,9 @@ def file_add(path, key, data, listWidget):
     for filepath in files[0]: 
         filename = filepath.split('/')[-1]
         
+        if filename in data.files: _create_list_item = False
+        else: _create_list_item = True
+        
         if os.path.getsize(filepath) > 2*1024*1024*1024:
             InfoMessageBox("File too large to add. Size limit per file is set to 2 GB for better performance!")
         elif (os.path.getsize(path) + os.path.getsize(filepath)) > 3*1024*1024*1024:
@@ -128,7 +131,9 @@ def file_add(path, key, data, listWidget):
                 data.files[filename] = encrypt(None, key, 0, filebytes = f.read())
             
             save(path, data)
-            QListWidgetItem(filename, listWidget)
+            
+            if _create_list_item:
+                QListWidgetItem(filename, listWidget)
             
 
 def file_rename(path, data, listWidget, selected):
@@ -235,10 +240,11 @@ class AddPasswordDialog(QDialog):
             InfoMessageBox("Passwords cannot contain '~'")
             return
         
+        if not self.site in data.passwords: QListWidgetItem(self.site, listWidget)
+        
         data.passwords[self.site] = encrypt(self.password, key, data.iv)
         save(path, data)
         
-        QListWidgetItem(self.site, listWidget)
         self.close()
         
     

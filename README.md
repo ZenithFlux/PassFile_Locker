@@ -11,9 +11,6 @@ All the instructions are embedded into the program.
 .lkr is the extension of the locker file created by the program. Double clicking the .lkr file has no use if program is not running from .exe file.
 Go to my Executables repository for the .exe file of the program. '.lkr' files can be opened directly when opened with passfile.exe.
 
-Note- This is an early development version of PassFile Locker. This application operates only on command line interface currently, 
-gui will be added just before finalizing the project.
-
 ## Encryption Used
 
 AES Encyption is used for passwords- Extremely secure encryption method. Any password encrypted with AES has never been broken till date.

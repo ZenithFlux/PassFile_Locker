@@ -1,3 +1,4 @@
 Modules:
 pycryptodome == v3.11.0
 pwinput == v1.0.2
+PyQT5 == 5.15.4
