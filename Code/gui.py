@@ -294,7 +294,7 @@ def main():
     if len(sys.argv) >= 2:
         path = sys.argv[1]
         app = QApplication(sys.argv)
-        app.setWindowIcon(QIcon("icon.ico"))
+        app.setWindowIcon(QIcon(sys.argv[0].replace(sys.argv[0].split('\\')[-1], 'icon.ico')))
         
         while True:    
             key, ok = QInputDialog.getText(None, "Enter password", "Password:", QLineEdit.Password)
