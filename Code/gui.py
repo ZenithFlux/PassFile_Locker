@@ -149,7 +149,7 @@ SIZEY = 400
 class LockerWindow(QWidget):    
     def __init__(self, path, key, data):
         super().__init__()
-        self.setWindowTitle(path.split('/')[-1] + " - PassFile Locker")
+        self.setWindowTitle(path.split('/')[-1].split('\\')[-1] + " - PassFile Locker")
         self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowMinMaxButtonsHint)
         self.base_layout = QVBoxLayout()
         self.setLayout(self.base_layout)
@@ -255,8 +255,10 @@ class LockerWindow(QWidget):
         self.close_locker_button = QPushButton(self)
         self.close_locker_button.setText("Close Locker")
         self.button_box.addButton(self.close_locker_button, QDialogButtonBox.RejectRole)
-        self.button_box.rejected.connect(lambda: changeWindow(self, FirstPage()))
-    
+        if len(sys.argv) >= 2:
+            self.button_box.rejected.connect(self.close)
+        else:
+            self.button_box.rejected.connect(lambda: changeWindow(self, FirstPage()))
         
         
         self.setFixedSize(self.minimumSizeHint())
