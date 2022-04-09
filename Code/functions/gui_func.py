@@ -122,9 +122,9 @@ def file_add(path, key, data, listWidget):
         else: _create_list_item = True
         
         if os.path.getsize(filepath) > 2*1024*1024*1024:
-            InfoMessageBox("File too large to add. Size limit per file is set to 2 GB for better performance!")
+            InfoMessageBox(f"{filename}\n\nFile too large to add. Size limit per file is set to 2 GB for better performance!")
         elif (os.path.getsize(path) + os.path.getsize(filepath)) > 3*1024*1024*1024:
-            InfoMessageBox("Locker limit is set to 3GB for performace purposes. Adding this file will exceed the locker limit.")
+            InfoMessageBox(f"{filename}\n\nLocker limit is set to 3GB for performace purposes. Adding this file will exceed the locker limit.")
             
         else:
             with open(filepath, 'rb') as f:

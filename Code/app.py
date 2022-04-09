@@ -319,9 +319,7 @@ def save(file, data):
         pickle.dump(data, f)
         
 def clrscr():
-    _ = os.system('cls')
-    del _        
-
+    os.system('cls')       
 
 
 # Main Program--------------------------------------------------------------------------------------------------
