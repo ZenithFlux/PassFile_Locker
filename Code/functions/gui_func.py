@@ -1,9 +1,20 @@
+import pickle
+import os
+
 from Crypto.Random import get_random_bytes
 from .encrypter import encrypt, decrypt
 from .smallDialogs import *
-from PyQt5.QtWidgets import QFileDialog, QLineEdit, QListWidgetItem, QInputDialog, QDialog, QPushButton, QDialogButtonBox
-import pickle
-import os
+from PyQt5.QtWidgets import QFileDialog, QLineEdit, QListWidgetItem, QInputDialog
+
+from . import dialogs
+
+class LockerData:
+    def __init__(self, key, iv):
+        self.key = key
+        self.passwords = {}
+        self.files = {}
+        self.iv = iv
+        
 
 '''
 Meaning of some common variables used in this file:-
@@ -103,7 +114,7 @@ def pw_veiw(key, data, selected):
         site = selected[0].text()
         password = decrypt(data.passwords[site], key, data.iv)
         
-        VeiwPasswordDialog(site, password)
+        dialogs.ViewPasswordDialog(site, password)
     
 def pw_delete(path, data, listWidget, selected):
     for site in selected:
@@ -173,84 +184,5 @@ def file_delete(path, data, listWidget, selected):
         del data.files[file.text()]
         listWidget.takeItem(listWidget.row(file))
           
-    save(path, data)
-
-
-class AddPasswordDialog(QDialog):
-    def __init__(self, path, key, data, listWidget):
-        super().__init__()
-        self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
-        self.setWindowTitle("Add new website")
-        self.layout = QVBoxLayout()
-        self.setLayout(self.layout)
-        
-        self.layout1 = QHBoxLayout()
-        self.layout.addLayout(self.layout1)
-        
-        self.site_label = QLabel(self)
-        self.layout1.addWidget(self.site_label)
-        self.site_label.setText("Website Name:")
-        
-        self.site_textbox = QLineEdit(self)
-        self.layout1.addWidget(self.site_textbox)
-        self.site_textbox.setFixedWidth(180)
-        
-        self.layout2 = QHBoxLayout()
-        self.layout.addLayout(self.layout2)
-        
-        self.password_label = QLabel(self)
-        self.layout2.addWidget(self.password_label)
-        self.password_label.setText("Password:")
-        
-        self.password_textbox = QLineEdit(self)
-        self.layout2.addWidget(self.password_textbox)
-        self.password_textbox.setFixedWidth(180)
-        self.password_textbox.setEchoMode(QLineEdit.Password)
-        
-        self.layout3 = QHBoxLayout()
-        self.layout.addLayout(self.layout3)
-        
-        self.layout3.addStretch(1)
-        
-        self.show_passwords = QPushButton(self)
-        self.layout3.addWidget(self.show_passwords)
-        self.show_passwords.setText("Show")
-        self.show_passwords.pressed.connect(lambda: self.password_textbox.setEchoMode(QLineEdit.Normal))
-        self.show_passwords.released.connect(lambda: self.password_textbox.setEchoMode(QLineEdit.Password))
-        
-        
-        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        self.button_box.accepted.connect(lambda: self.ok_clicked(path, key, data, listWidget))
-        self.button_box.rejected.connect(self.close)
-        self.layout.addWidget(self.button_box)
-        
-        
-        self.setFixedSize(self.minimumSizeHint())
-        self.exec()
-        
-    def ok_clicked(self, path, key, data, listWidget):
-        self.site = self.site_textbox.text().strip()
-        self.password = self.password_textbox.text()
-        
-        if not(self.site and self.password):
-            InfoMessageBox("Both website name and password are required to complete the action!")
-            return
-        
-        if '~' in self.password:
-            InfoMessageBox("Passwords cannot contain '~'")
-            return
-        
-        if not self.site in data.passwords: QListWidgetItem(self.site, listWidget)
-        
-        data.passwords[self.site] = encrypt(self.password, key, data.iv)
-        save(path, data)
-        
-        self.close()
-        
+    save(path, data)        
     
-class LockerData:
-    def __init__(self, key, iv):
-        self.key = key
-        self.passwords = {}
-        self.files = {}
-        self.iv = iv
