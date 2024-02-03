@@ -1,114 +1,61 @@
-from Crypto.Cipher import AES, ChaCha20
+from Cryptodome.Cipher import AES, ChaCha20
+from Cryptodome.Random import get_random_bytes
+from Cryptodome.Protocol.KDF import scrypt
+from Cryptodome.Util.Padding import pad, unpad
+
+
+KEY_SIZE = 32 # bytes
+BLOCK_SIZE = 16 # bytes
 
 class LockerError(Exception):
     pass
-      
 
-def encrypt(x, key, iv, filebytes = None):
-    
-    if filebytes == None:
-        key = key_convert_AES(key)
-        cipher = AES.new(key, AES.MODE_CBC, iv = iv)
-        
-        if '~' in x:
-            raise LockerError("Text cannot contain '~'")
-            
-        x = [x[i:i+16] for i in range(0, len(x), 16)]
-        encrypted = []
-        for piece in x:
-            piece = bytearray(piece, "utf-8")
-            
-            if len(piece) < 16:
-                to_add = 16 - len(piece)
-                for i in range(0, to_add):
-                    piece += bytearray('~', 'utf-8')
-                    
-            piece = bytes(piece)
-            piece = cipher.encrypt(piece)
-            encrypted.append(piece)
 
-    else:
-        key = key_convert_ChaCha(key)
-        cipher = ChaCha20.new(key = key, nonce = b'This is lock')
-        
+def encrypt(password: str, text: str | None = None, filebytes: bytes | None = None):
+    if text is not None:
+        key = pwd2key(password)
+        cipher = AES.new(key, AES.MODE_CBC)
+
+        text = pad(bytes(text, 'utf-8'), BLOCK_SIZE)
+        encrypted = cipher.encrypt(text)
+        iv_or_nonce = cipher.iv
+
+    elif filebytes is not None:
+        key = pwd2key(password)
+        nonce = get_random_bytes(12)
+
+        cipher = ChaCha20.new(key, nonce)
         encrypted = cipher.encrypt(filebytes)
-        
-    return encrypted
+        iv_or_nonce = nonce
 
-
-def decrypt(x, key, iv, filebytes = None):
-    
-    if filebytes == None:
-        key = key_convert_AES(key)
-        
-        cipher = AES.new(key, AES.MODE_CBC, iv = iv)
-        decrypted = ""
-        
-        for part in x:
-            try:
-                text = cipher.decrypt(part).decode()
-            except:
-                return 0
-        
-            if text.endswith('~'):
-                text = text[0:int(text.index('~'))]
-                
-            decrypted += text
-    
     else:
-        key = key_convert_ChaCha(key)
-        cipher = ChaCha20.new(key = key, nonce = b'This is lock')
-        
+        raise ValueError("Either 'text' or 'filebytes' must be provided")
+
+    return encrypted, iv_or_nonce
+
+
+def decrypt(password: str, iv_or_nonce: bytes, text: bytes | None = None, filebytes: bytes | None = None):
+    if text is not None:
+        key = pwd2key(password)
+        cipher = AES.new(key, AES.MODE_CBC, iv = iv_or_nonce)
+
+        decrypted = cipher.decrypt(text)
+        decrypted = unpad(decrypted, BLOCK_SIZE).decode()
+
+    elif filebytes is not None:
+        key = pwd2key(password)
+        cipher = ChaCha20.new(key, iv_or_nonce)
+
         decrypted = cipher.decrypt(filebytes)
-        
+
+    else:
+        raise ValueError("Either 'text' or 'filebytes' must be provided")
+
     return decrypted
 
 
-
-def key_convert_AES(key):
-    
-    if len(key) > 32:
-        key = key[:32]
-        
-    if len(key) < 16:
-        to_add = 16 - len(key)
-        
-        pos = -1
-        for i in range(0, to_add):
-            pos += 1
-            try:
-                key += key[pos]
-            except IndexError:
-                pos = 0
-                key =+ key[pos]
-                
-    else:
-        # Below calculations are done so that the whole key has contribution in the AES key created
-        # even if the key is longer than 16 characters. (AES-128 key is always 16 chars.)
-        x = 32 - len(key)
-        key = key[:x] + key[x+1::2]
-    
-    key = bytes(key, "utf-8")
-    return key
-
-
-
-def key_convert_ChaCha(key):
-    
-    if len(key) < 32:
-        to_add = 32 - len(key)
-        
-        pos = -1
-        for i in range(0, to_add):
-            pos += 1
-            try:
-                key += key[pos]
-            except IndexError:
-                pos = 0
-                key =+ key[pos]
-                
-    else:
-        key = key[:32]
-    
-    key = bytes(key, "utf-8")
+def pwd2key(pwd: str):
+    # salt is kept constant as salting is done by AES's 'iv' later.
+    salt = "This will be constant"
+    key = scrypt(pwd, salt, KEY_SIZE, 2**14, 8, 1)
     return key

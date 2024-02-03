@@ -3,4 +3,5 @@ _*
 !*__.py
 
 # dev folders
-venv
+.venv
+bash_init.sh
