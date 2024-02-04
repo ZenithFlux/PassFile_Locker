@@ -7,15 +7,7 @@ from pwinput import pwinput
 
 from functions import encrypt, decrypt
 from functions.encrypter import LockerError
-
-
-
-class LockerData:
-    def __init__(self, key, iv):
-        self.key = key
-        self.passwords = {}
-        self.files = {}
-        self.iv = iv
+from functions.gui_func import LockerData
 
 
 def newLocker(file, key):
@@ -28,7 +20,6 @@ def newLocker(file, key):
     clrscr()
     openLocker(file, key)
     return
-
 
 
 def openLocker(file, key):

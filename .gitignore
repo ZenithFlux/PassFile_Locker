@@ -4,4 +4,4 @@ _*
 
 # dev folders
 .venv
-bash_init.sh
+.bash_init

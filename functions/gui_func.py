@@ -8,12 +8,37 @@ from .encrypter import encrypt, decrypt
 from .smallDialogs import *
 from . import dialogs
 
+
 class LockerData:
-    def __init__(self, key, iv):
-        self.key = key
-        self.passwords = {}
-        self.files = {}
-        self.iv = iv
+
+    CHECK_PHRASE_PLAINTEXT = 'correct_password'
+
+    def __init__(self, password: str):
+        self.check_phrase: dict[str, bytes] = {}
+        self.passwords: dict[str, bytes] = {}
+        self.files: list[dict[str, bytes | str]] = []
+
+        self.check_phrase['ciphertext'], self.check_phrase['iv'] = encrypt(password, self.CHECK_PHRASE_PLAINTEXT)
+
+
+    def check_pass(self, password: str) -> bool:
+        return decrypt(password, self.check_phrase['iv'],
+                       self.check_phrase['ciphertext']) == self.CHECK_PHRASE_PLAINTEXT
+
+
+    def change_password(self, curr_pwd: str, new_pwd: str) -> bool:
+        if not self.check_pass(curr_pwd):
+            return False
+
+        ciphertext = decrypt(curr_pwd, self.passwords['iv'], self.passwords['ciphertext'])
+        self.passwords['ciphertext'], self.passwords['iv'] = encrypt(new_pwd, ciphertext)
+
+        for file in self.files:
+            ciphertext = decrypt(curr_pwd, file['iv'], file['ciphertext'])
+            file['ciphertext'], file['iv'] = encrypt(new_pwd, ciphertext)
+
+        self.check_phrase['ciphertext'], self.check_phrase['iv'] = encrypt(new_pwd, self.CHECK_PHRASE_PLAINTEXT)
+        return True
 
 
 '''

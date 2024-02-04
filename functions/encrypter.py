@@ -4,8 +4,8 @@ from Cryptodome.Protocol.KDF import scrypt
 from Cryptodome.Util.Padding import pad, unpad
 
 
-KEY_SIZE = 32 # bytes
-BLOCK_SIZE = 16 # bytes
+KEY_SIZE_BYTES = 32
+BLOCK_SIZE_BYTES = 16
 
 class LockerError(Exception):
     pass
@@ -16,7 +16,7 @@ def encrypt(password: str, text: str | None = None, filebytes: bytes | None = No
         key = pwd2key(password)
         cipher = AES.new(key, AES.MODE_CBC)
 
-        text = pad(bytes(text, 'utf-8'), BLOCK_SIZE)
+        text = pad(bytes(text, 'utf-8'), BLOCK_SIZE_BYTES)
         encrypted = cipher.encrypt(text)
         iv_or_nonce = cipher.iv
 
@@ -40,7 +40,7 @@ def decrypt(password: str, iv_or_nonce: bytes, text: bytes | None = None, fileby
         cipher = AES.new(key, AES.MODE_CBC, iv = iv_or_nonce)
 
         decrypted = cipher.decrypt(text)
-        decrypted = unpad(decrypted, BLOCK_SIZE).decode()
+        decrypted = unpad(decrypted, BLOCK_SIZE_BYTES).decode()
 
     elif filebytes is not None:
         key = pwd2key(password)
@@ -57,5 +57,5 @@ def decrypt(password: str, iv_or_nonce: bytes, text: bytes | None = None, fileby
 def pwd2key(pwd: str):
     # salt is kept constant as salting is done by AES's 'iv' later.
     salt = "This will be constant"
-    key = scrypt(pwd, salt, KEY_SIZE, 2**14, 8, 1)
+    key = scrypt(pwd, salt, KEY_SIZE_BYTES, 2**14, 8, 1)
     return key
