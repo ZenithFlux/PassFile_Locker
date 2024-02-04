@@ -26,10 +26,10 @@ def openLocker(file, key):
 
     print("Opening the Locker...")
     with open(file, 'rb') as f:
-        data = pickle.load(f)
+        data: LockerData = pickle.load(f)
     clrscr()
 
-    if decrypt(data.key, key, data.iv) == key:
+    if data.check_password(key):
         passmode(data, key)
 
     else:
@@ -40,7 +40,7 @@ def passmode(data, key):
     global file
 
     while True:
-        passwords = data.passwords
+        passwords = data.passwords['data']
         print("---- {0} ----\n--Password Section--".format(file.split('\\')[-1]))
 
         if not passwords:
@@ -90,8 +90,8 @@ def passmode(data, key):
                 print("Keys and passwords cannot contain '~'!\n")
                 continue
 
-            data.passwords[site] = encrypt(newPass, key, data.iv)
-            save(file, data)
+            data.passwords[site] = newPass
+            data.save(file, key)
             print('New password added successfully...\n')
             continue
 
@@ -102,7 +102,7 @@ def passmode(data, key):
 
         elif choice.isnumeric() and int(choice) <= len(passwords.keys()):
             site = list(passwords.keys())[int(choice) - 1]
-            password = decrypt(passwords[site], key, data.iv)
+            password = passwords[site]
             print(f"\nPassword for '{site}' is:\n{password}")
             print("Type 'change' to change this password.")
             print("Type 'delete' to delete this password. Password can't be retrieved once deleted.")
@@ -125,14 +125,14 @@ def passmode(data, key):
                     print("Keys and passwords cannot contain '~'!\n")
                     continue
 
-                data.passwords[site] = encrypt(newPass, key, data.iv)
-                save(file, data)
+                data.passwords[site] = newPass
+                data.save(file, key)
                 print('Password updated successfully...\n')
                 continue
 
             elif choice == 'delete':
                 del data.passwords[site]
-                save(file, data)
+                data.save(file, key)
                 print("Password deleted successfully...\n")
                 continue
 
@@ -211,7 +211,7 @@ def filemode(data, key):
                 print("File not found!\n")
                 continue
 
-            save(file, data)
+            data.save(file, key)
             clrscr()
             print("File added successfully...\nFrom " + filename +'\n')
             continue
@@ -302,10 +302,6 @@ def filemode(data, key):
 
 
 # Micro Functions----------------------------------------------------------------------------------------------
-
-def save(file, data):
-    with open(file, 'wb') as f:
-        pickle.dump(data, f)
 
 def clrscr():
     os.system('cls')

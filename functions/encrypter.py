@@ -7,9 +7,6 @@ from Cryptodome.Util.Padding import pad, unpad
 KEY_SIZE_BYTES = 32
 BLOCK_SIZE_BYTES = 16
 
-class LockerError(Exception):
-    pass
-
 
 def encrypt(password: str, text: str | None = None, filebytes: bytes | None = None):
     if text is not None:
