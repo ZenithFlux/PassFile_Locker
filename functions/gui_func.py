@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QFileDialog, QLineEdit, QListWidgetItem, QInputDialo
 
 from .smallDialogs import *
 from . import dialogs
+from .encrypter import decrypt
 from .locker import Locker
 
 
@@ -34,11 +35,11 @@ def show_released(textbox1, textbox2):
     textbox1.setEchoMode(QLineEdit.Password)
     textbox2.setEchoMode(QLineEdit.Password)
 
-def fill_pwList(locker, listWidget):
+def fill_pwList(locker: Locker, listWidget):
     for site in locker.passwords['data'].keys():
         QListWidgetItem(site, listWidget)
 
-def fill_fileList(locker, listWidget):
+def fill_fileList(locker: Locker, listWidget):
     for file in locker.files.keys():
         QListWidgetItem(file, listWidget)
 
@@ -54,9 +55,8 @@ def open_locker(window, LockerWindow):
             with open(path, 'rb') as f:
                 locker: Locker = pickle.load(f)
 
-            if key and locker.check_password(key):
-                locker.decrypt_passwords(key)
-                changeWindow(window, LockerWindow(path, key, locker))
+            if key and locker.unlock(key):
+                changeWindow(window, LockerWindow(path, locker))
                 break
 
             else:
@@ -84,13 +84,13 @@ def createNewLocker(path, keypair, window, LockerWindow):
 
     locker = Locker(key)
 
-    locker.save(path, key)
+    locker.save(path)
     changeWindow(window, LockerWindow(path, key, locker))
 
 
 # --------------------------Locker Control Functions-------------------------------
 
-def pw_veiw(locker, selected):
+def pw_veiw(locker: Locker, selected):
     if len(selected) > 1:
         InfoMessageBox("Only one password can be veiwed at a time!")
         return
@@ -100,19 +100,19 @@ def pw_veiw(locker, selected):
         dialogs.ViewPasswordDialog(site, locker.passwords['data'][site])
 
 
-def pw_delete(path, locker, key, listWidget, selected):
+def pw_delete(path, locker: Locker, listWidget, selected):
     for site in selected:
         del locker.passwords['data'][site.text()]
         listWidget.takeItem(listWidget.row(site))
 
-    locker.save(path, key)
+    locker.save(path)
 
 
-def file_add(path, locker, listWidget):
+def file_add(path, locker: Locker, listWidget):
     files = QFileDialog.getOpenFileNames(None, "Select file(s) to encrypt", "", "All Files(*)")
 
     for filepath in files[0]:
-        filename = filepath.split('/')[-1]
+        filename = os.path.basename(filepath)
 
         if filename in locker.files: _create_list_item = False
         else: _create_list_item = True
@@ -124,15 +124,15 @@ def file_add(path, locker, listWidget):
 
         else:
             with open(filepath, 'rb') as f:
-                locker.add_
+                locker.add_file(filename, f.read())
 
-            locker.save(path, key)
+            locker.save(path)
 
             if _create_list_item:
                 QListWidgetItem(filename, listWidget)
 
 
-def file_rename(path, locker, key, listWidget, selected):
+def file_rename(path, locker: Locker, listWidget, selected):
     if len(selected) == 1:
         newName, ok = QInputDialog.getText(None, "Rename File", "File Name:", text = selected[0].text())
         newName = newName.strip()
@@ -140,7 +140,7 @@ def file_rename(path, locker, key, listWidget, selected):
         if ok and newName and newName != selected[0].text():
             locker.files[newName] = locker.files[selected[0].text()]
             del locker.files[selected[0].text()]
-            locker.save(path, key)
+            locker.save(path)
 
             listWidget.takeItem(listWidget.row(selected[0]))
             QListWidgetItem(newName, listWidget)
@@ -149,7 +149,7 @@ def file_rename(path, locker, key, listWidget, selected):
         InfoMessageBox("Only one file can be renamed at a time.")
 
 
-def file_extract(locker, key, selected):
+def file_extract(locker: Locker, selected):
     if selected:
         folder = str(QFileDialog.getExistingDirectory(None, "Select folder to extract file(s) in"))
     else:
@@ -162,12 +162,12 @@ def file_extract(locker, key, selected):
 
             with open(filepath, 'wb') as f:
                 locker_file = locker.files[filename]
-                f.write(decrypt(key, locker_file['nonce'], filebytes = locker_file['ciphertext']))
+                f.write(decrypt(locker.pwd, locker_file['nonce'], filebytes = locker_file['ciphertext']))
 
 
-def file_delete(path, locker, key, listWidget, selected):
+def file_delete(path, locker: Locker, listWidget, selected):
     for file in selected:
         del locker.files[file.text()]
         listWidget.takeItem(listWidget.row(file))
 
-    locker.save(path, key)
+    locker.save(path)

@@ -14,6 +14,7 @@ class Locker:
         self.files: dict[str, dict[str, bytes]] = {}
 
         self.check_phrase['ciphertext'], self.check_phrase['iv'] = encrypt(password, self.CHECK_PHRASE_PLAINTEXT)
+        self.pwd = password
 
 
     def unlock(self, password: str) -> bool:
@@ -35,7 +36,7 @@ class Locker:
         self.files[filename]['ciphertext'], self.files[filename]['nonce'] = encrypt(self.pwd, filebytes = filedata)
 
 
-    def change_password(self, new_pwd: str) -> bool:
+    def change_password(self, new_pwd: str):
         if not hasattr(self, "pwd"):
             raise LockerError("Locker not unlocked")
 
@@ -50,20 +51,23 @@ class Locker:
         self.pwd = new_pwd
 
 
-    def save(self, path):
+    def save(self, path: str):
         if not hasattr(self, "pwd"):
             raise LockerError("Locker not unlocked")
 
+        pwd = self.pwd
+        del self.pwd
         pwd_dict = self.passwords['data']
         del self.passwords['data']
 
         pwd_json = json.dumps(pwd_dict)
-        self.passwords['ciphertext'], self.passwords['iv'] = encrypt(self.pwd, pwd_json)
+        self.passwords['ciphertext'], self.passwords['iv'] = encrypt(pwd, pwd_json)
 
         with open(path, 'wb') as f:
             pickle.dump(self, f)
 
         self.passwords['data'] = pwd_dict
+        self.pwd = pwd
 
 
 

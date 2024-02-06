@@ -150,7 +150,7 @@ SIZEX = 230
 SIZEY = 400
 
 class LockerWindow(QWidget):
-    def __init__(self, path, key, data):
+    def __init__(self, path, key, locker: Locker):
         super().__init__()
         self.setWindowTitle(path.split('/')[-1].split('\\')[-1] + " - PassFile Locker")
         self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowMinMaxButtonsHint)
@@ -158,11 +158,11 @@ class LockerWindow(QWidget):
         self.setLayout(self.base_layout)
         self.layout = QHBoxLayout()
         self.base_layout.addLayout(self.layout)
-        self.initUI(path, key, data)
+        self.initUI(path, key, locker)
 
 
 
-    def initUI(self, path, key, data):
+    def initUI(self, path, key, locker: Locker):
         # From here, layout12 would mean layout2 of layout1
         self.layout1 = QVBoxLayout()
         self.layout.addLayout(self.layout1)
@@ -179,7 +179,7 @@ class LockerWindow(QWidget):
         self.pw_list.setFixedSize(SIZEX, SIZEY)
         self.pw_list.setSortingEnabled(True)
         self.pw_list.setSelectionMode(QListWidget.ExtendedSelection)
-        fill_pwList(data, self.pw_list)
+        fill_pwList(locker, self.pw_list)
 
         self.layout111 = QVBoxLayout()
         self.layout11.addLayout(self.layout111)
@@ -189,17 +189,17 @@ class LockerWindow(QWidget):
         self.pwAdd = QPushButton(self)
         self.layout111.addWidget(self.pwAdd)
         self.pwAdd.setText("Add")
-        self.pwAdd.clicked.connect(lambda: AddPasswordDialog(path, key, data, self.pw_list))
+        self.pwAdd.clicked.connect(lambda: AddPasswordDialog(path, key, locker, self.pw_list))
 
         self.pwView = QPushButton(self)
         self.layout111.addWidget(self.pwView)
         self.pwView.setText("View")
-        self.pwView.clicked.connect(lambda: pw_veiw(key, data, self.pw_list.selectedItems()))
+        self.pwView.clicked.connect(lambda: pw_veiw(locker, self.pw_list.selectedItems()))
 
         self.pwDelete = QPushButton(self)
         self.layout111.addWidget(self.pwDelete)
         self.pwDelete.setText("Delete")
-        self.pwDelete.clicked.connect(lambda: DeleteConfirmation("password", path, data, key, self))
+        self.pwDelete.clicked.connect(lambda: DeleteConfirmation("password", path, locker, self))
 
         self.layout111.addStretch(1)
 
@@ -221,7 +221,7 @@ class LockerWindow(QWidget):
         self.file_list.setSelectionMode(QListWidget.ExtendedSelection)
         self.file_list.setSortingEnabled(True)
         self.file_list.setFixedSize(SIZEX, SIZEY)
-        fill_fileList(data, self.file_list)
+        fill_fileList(locker, self.file_list)
 
         self.layout211 = QVBoxLayout()
         self.layout21.addLayout(self.layout211)
@@ -231,22 +231,22 @@ class LockerWindow(QWidget):
         self.fileAdd = QPushButton(self)
         self.layout211.addWidget(self.fileAdd)
         self.fileAdd.setText("Add")
-        self.fileAdd.clicked.connect(lambda: file_add(path, data, key, self.file_list))
+        self.fileAdd.clicked.connect(lambda: file_add(path, locker, self.file_list))
 
         self.fileRename = QPushButton(self)
         self.layout211.addWidget(self.fileRename)
         self.fileRename.setText("Rename")
-        self.fileRename.clicked.connect(lambda: file_rename(path, data, key, self.file_list, self.file_list.selectedItems()))
+        self.fileRename.clicked.connect(lambda: file_rename(path, locker, self.file_list, self.file_list.selectedItems()))
 
         self.fileExtract = QPushButton(self)
         self.layout211.addWidget(self.fileExtract)
         self.fileExtract.setText("Extract")
-        self.fileExtract.clicked.connect(lambda: file_extract(data, key, self.file_list.selectedItems()))
+        self.fileExtract.clicked.connect(lambda: file_extract(locker, self.file_list.selectedItems()))
 
         self.fileDelete = QPushButton(self)
         self.layout211.addWidget(self.fileDelete)
         self.fileDelete.setText("Delete")
-        self.fileDelete.clicked.connect(lambda: DeleteConfirmation("file", path, data, key, self))
+        self.fileDelete.clicked.connect(lambda: DeleteConfirmation("file", path, locker, self))
 
 
         self.layout211.addStretch(1)
@@ -268,7 +268,7 @@ class LockerWindow(QWidget):
 
 
 class DeleteConfirmation(QMessageBox):
-    def __init__(self, for_which, path, data, key, window):
+    def __init__(self, for_which, path, locker: Locker, window):
         super().__init__()
         self.setWindowTitle("Confirm Delete")
         self.setIcon(QMessageBox.Warning)
@@ -280,9 +280,9 @@ class DeleteConfirmation(QMessageBox):
             self.pressed = self.exec()
 
             if for_which == "password" and self.pressed == QMessageBox.Yes:
-                pw_delete(path, data, key, window.pw_list, window.pw_list.selectedItems())
+                pw_delete(path, locker, window.pw_list, window.pw_list.selectedItems())
             elif for_which == "file" and self.pressed == QMessageBox.Yes:
-                file_delete(path, data, key, window.file_list, window.file_list.selectedItems())
+                file_delete(path, locker, window.file_list, window.file_list.selectedItems())
 
             elif self.pressed == QMessageBox.No:
                 pass
@@ -304,11 +304,10 @@ def main():
 
             if ok:
                 with open(path, 'rb') as f:
-                    data: Locker = pickle.load(f)
+                    locker: Locker = pickle.load(f)
 
-                if key and data.check_password(key):
-                    data.decrypt_passwords(key)
-                    win = LockerWindow(path, key, data)
+                if key and locker.unlock(key):
+                    win = LockerWindow(path, locker)
                     win.show()
                     sys.exit(app.exec_())
 
