@@ -1,4 +1,5 @@
 import sys
+import os
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout
@@ -130,19 +131,22 @@ class NewLockerDialog(QDialog):
         self.setFixedSize(self.minimumSizeHint())
 
     def ok_clicked(self):
-        if not self.location_textbox.text().strip():
+        location = self.location_textbox.text().strip()
+        name = self.name_textbox.text().strip()
+
+        if not location:
             InfoMessageBox("It is required to select some location for Locker!")
             return
 
-        if not os.path.exists(self.location_textbox.text().strip()):
+        if not os.path.exists(location):
             InvaildLocationBox()
             return
 
-        if not self.name_textbox.text().strip():
+        if not name:
             InfoMessageBox("Please enter a name for the Locker!")
             return
 
-        self._lockerpath = self.location_textbox.text() + "/" + self.name_textbox.text()
+        self._lockerpath = os.path.join(location, name)
         createNewLocker(self._lockerpath, (self.password_textbox.text(), self.cpassword_textbox.text()), self, LockerWindow)
 
 # Size of the List Boxes in the LockerWindow
@@ -150,19 +154,19 @@ SIZEX = 230
 SIZEY = 400
 
 class LockerWindow(QWidget):
-    def __init__(self, path, key, locker: Locker):
+    def __init__(self, path, locker: Locker):
         super().__init__()
-        self.setWindowTitle(path.split('/')[-1].split('\\')[-1] + " - PassFile Locker")
+        self.setWindowTitle(os.path.basename(path) + " - PassFile Locker")
         self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowMinMaxButtonsHint)
         self.base_layout = QVBoxLayout()
         self.setLayout(self.base_layout)
         self.layout = QHBoxLayout()
         self.base_layout.addLayout(self.layout)
-        self.initUI(path, key, locker)
+        self.initUI(path, locker)
 
 
 
-    def initUI(self, path, key, locker: Locker):
+    def initUI(self, path, locker: Locker):
         # From here, layout12 would mean layout2 of layout1
         self.layout1 = QVBoxLayout()
         self.layout.addLayout(self.layout1)
@@ -189,7 +193,7 @@ class LockerWindow(QWidget):
         self.pwAdd = QPushButton(self)
         self.layout111.addWidget(self.pwAdd)
         self.pwAdd.setText("Add")
-        self.pwAdd.clicked.connect(lambda: AddPasswordDialog(path, key, locker, self.pw_list))
+        self.pwAdd.clicked.connect(lambda: AddPasswordDialog(path, locker, self.pw_list))
 
         self.pwView = QPushButton(self)
         self.layout111.addWidget(self.pwView)
@@ -292,33 +296,30 @@ class DeleteConfirmation(QMessageBox):
 
 
 def main():
+    app = QApplication(sys.argv)
 
     # Following code will initiate the app if app is opened using a locker file
     if len(sys.argv) >= 2:
         path = sys.argv[1]
-        app = QApplication(sys.argv)
-        app.setWindowIcon(QIcon(sys.argv[0].replace(sys.argv[0].split('\\')[-1], 'icon.ico')))
+        app.setWindowIcon(QIcon(os.path.join(os.path.dirname(sys.argv[0]), 'icon.ico')))
 
         while True:
             key, ok = QInputDialog.getText(None, "Enter password", "Password:", QLineEdit.Password)
+            if not ok: sys.exit()
 
-            if ok:
-                with open(path, 'rb') as f:
-                    locker: Locker = pickle.load(f)
+            with open(path, 'rb') as f:
+                locker: Locker = pickle.load(f)
 
-                if key and locker.unlock(key):
-                    win = LockerWindow(path, locker)
-                    win.show()
-                    sys.exit(app.exec_())
+            if key and locker.unlock(key):
+                win = LockerWindow(path, locker)
+                win.show()
+                sys.exit(app.exec_())
 
-                else:
-                    WrongPassword()
-                    continue
             else:
-                sys.exit()
+                WrongPassword()
+                continue
 
     # Following code will initiate the app if app is opened directly from .exe
-    app = QApplication(sys.argv)
     app.setWindowIcon(QIcon("icon.ico"))
     win = FirstPage()
     win.show()

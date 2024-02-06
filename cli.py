@@ -2,20 +2,16 @@ import os
 import pickle
 import sys
 
-from Cryptodome.Random import get_random_bytes
 from pwinput import pwinput
 
-from functions import encrypt, decrypt
-from functions.encrypter import LockerError
-from functions.gui_func import LockerData
-
+from functions import decrypt
+from functions.locker import *
 
 def newLocker(file, key):
     print('Creating new Locker...')
-    iv = get_random_bytes(16)
-    data = LockerData(encrypt(key, key, iv), iv)
+    locker = Locker(key)
 
-    save(file, data)
+    locker.save(file)
 
     clrscr()
     openLocker(file, key)
@@ -26,22 +22,21 @@ def openLocker(file, key):
 
     print("Opening the Locker...")
     with open(file, 'rb') as f:
-        data: LockerData = pickle.load(f)
+        locker: Locker = pickle.load(f)
     clrscr()
 
-    if data.check_password(key):
-        passmode(data, key)
-
+    if locker.unlock(key):
+        passmode(locker)
     else:
         raise LockerError('Invalid key')
 
 
-def passmode(data, key):
+def passmode(locker: Locker):
     global file
 
     while True:
-        passwords = data.passwords['data']
-        print("---- {0} ----\n--Password Section--".format(file.split('\\')[-1]))
+        passwords = locker.passwords['data']
+        print("---- {0} ----\n--Password Section--".format(os.path.basename(file)))
 
         if not passwords:
             print('\nNo password added yet...')
@@ -62,7 +57,7 @@ def passmode(data, key):
 
         if choice == 'f':
             clrscr()
-            file_closed = filemode(data, key)
+            file_closed = filemode(locker)
             if file_closed == True:
                 return
             else:
@@ -72,35 +67,27 @@ def passmode(data, key):
             return
 
         elif choice == 'add':
-            site = input("Enter a new site name to store password for: ")
-            if site in passwords:
-                print('Password for this site already exists!\n')
-                continue
-            elif site.lower() == 'exit':
+            site = input("Enter a new site name to store password for (Leave empty to cancel): ")
+            if not site:
                 clrscr()
                 continue
 
-            newPass = pwinput('Enter the password to store: ')
+            if site in passwords:
+                print('Password for this site already exists!\n')
+                continue
+
+            newPass = pwinput('Enter the password to store (Leave empty to cancel): ')
             clrscr()
 
-            if newPass.lower() == 'exit':
+            if not newPass:
                 continue
 
-            if '~' in newPass:
-                print("Keys and passwords cannot contain '~'!\n")
-                continue
-
-            data.passwords[site] = newPass
-            data.save(file, key)
+            passwords[site] = newPass
+            locker.save(file)
             print('New password added successfully...\n')
             continue
 
-        elif not passwords:
-            clrscr()
-            print('Invalid input!\n')
-            continue
-
-        elif choice.isnumeric() and int(choice) <= len(passwords.keys()):
+        elif passwords and choice.isnumeric() and int(choice) <= len(passwords.keys()):
             site = list(passwords.keys())[int(choice) - 1]
             password = passwords[site]
             print(f"\nPassword for '{site}' is:\n{password}")
@@ -110,29 +97,25 @@ def passmode(data, key):
             choice = input().lower()
             clrscr()
 
-            if choice == 'b' or choice == 'exit':
+            if choice == 'b':
                 clrscr()
                 continue
 
             elif choice == 'change':
-                newPass = pwinput("Enter new password: ")
+                newPass = pwinput("Enter new password (Leave empty to cancel): ")
                 clrscr()
 
-                if newPass.lower() == 'exit':
+                if not newPass:
                     continue
 
-                if '~' in newPass:
-                    print("Keys and passwords cannot contain '~'!\n")
-                    continue
-
-                data.passwords[site] = newPass
-                data.save(file, key)
+                passwords[site] = newPass
+                locker.save(file)
                 print('Password updated successfully...\n')
                 continue
 
             elif choice == 'delete':
-                del data.passwords[site]
-                data.save(file, key)
+                del passwords[site]
+                locker.save(file)
                 print("Password deleted successfully...\n")
                 continue
 
@@ -145,33 +128,28 @@ def passmode(data, key):
             print('Invalid input!\n')
             continue
 
-def filemode(data, key):
+def filemode(locker: Locker):
     global file
     print("This locker is designed to encrypt important documents. Since encryption is very resource intensive,")
     print("it is not advised to put huge files in the locker. Locker will take more time to encrypt bigger files.\n")
     print("If you want to store large number of files, you can zip those files and store it here.\n")
 
-    if '\\' in file:
-        defaultpath = '\\'.join(file.split("\\")[:-1]) + '\\'     # removing locker's name from the end of the path
-    else:
-        defaultpath = ''
-
     while True:
-        print("---- {0} ----\n--Files Section --".format(file.split('\\')[-1]))
+        print("---- {0} ----\n--Files Section --".format(os.path.basename(file)))
 
-        if not data.files:
+        if not locker.files:
             print('\nNo Files found in the locker...')
 
         else:
             print("\nFollowing files have been found in the locker -")
             n=0
-            for filename in data.files.keys():
+            for filename in locker.files.keys():
                 n += 1
                 print(f'{n}. {filename}')
             del n
             print()
 
-        if data.files:
+        if locker.files:
             print('Enter the number of a file to extract/rename/delete that file.')
 
         print("Type 'add' to add a new file.\nType 'p' to go into Password Section.\nType 'exit' to close the locker.")
@@ -182,28 +160,25 @@ def filemode(data, key):
             return False
 
         elif choice == 'add':
-            filename = input("Enter path of the file to add: ")
-            if filename.lower() == 'exit':
+            filename = input("Enter path of the file to add (Leave empty to cancel): ")
+            if not filename:
                 clrscr()
                 continue
 
-            if '\\' not in filename:
-                filename = defaultpath + filename
-
             try:
+                if os.path.getsize(filename) > 2*1024*1024*1024:   # 2 GB = 2*1024*1024*1024 bytes
+                    clrscr()
+                    print('File too large to add. Size limit per file is set to 2 GB for performance purposes!!\n')
+                    continue
+
                 if (os.path.getsize(file) + os.path.getsize(filename)) > 3*1024*1024*1024:
                     clrscr()
                     print("Adding this file will exceed the locker limit (3 GB)!!\n")
                     continue
 
                 with open(filename, 'rb') as f:
-                    if os.path.getsize(filename) > 2*1024*1024*1024:   # 2 GB = 2*1024*1024*1024 bytes
-                        clrscr()
-                        print('File too large to add. Size limit per file is set to 2 GB for performance purposes!!\n')
-                        continue
-
                     print("Processing the file...")
-                    data.files[filename.split('\\')[-1]] = encrypt(None, key, 0, filebytes = f.read())
+                    locker.add_file(os.path.basename(filename), f.read())
 
             except FileNotFoundError:
                 clrscr()
@@ -211,7 +186,7 @@ def filemode(data, key):
                 print("File not found!\n")
                 continue
 
-            data.save(file, key)
+            locker.save(file)
             clrscr()
             print("File added successfully...\nFrom " + filename +'\n')
             continue
@@ -219,32 +194,27 @@ def filemode(data, key):
         elif choice == 'exit':
             return True
 
-        elif not data.files:
-            clrscr()
-            print('Invalid input!\n')
-            continue
-
-        elif choice.isnumeric() and int(choice) <= len(data.files):
-            filename = list(data.files.keys())[int(choice) - 1]
+        elif locker.files and choice.isnumeric() and int(choice) <= len(locker.files):
+            filename = list(locker.files.keys())[int(choice) - 1]
             print(f"--- {filename} ---\n")
             print("Type 'extract' to extract the file.\nType 'rename' to rename it.")
             print("Type 'delete' to remove the file from the locker.\nEnter 'b' to go back to the files list.")
             choice = input().lower()
 
-            if choice == "b" or choice == "exit":
+            if choice == "b":
                 clrscr()
                 continue
 
             elif choice == "rename":
-                newName = input("Enter new name for the file: ")
-                if newName.lower() == 'exit':
+                newName = input("Enter new name for the file (Leave empty to cancel): ")
+                if not newName:
                     clrscr()
                     continue
 
                 print("Renaming the file...")
-                data.files[newName] = data.files[filename]
-                del data.files[filename]
-                save(file, data)
+                locker.files[newName] = locker.files[filename]
+                del locker.files[filename]
+                locker.save(file)
 
                 clrscr()
                 print("File renamed successfully...\n")
@@ -252,27 +222,25 @@ def filemode(data, key):
 
             elif choice == "delete":
                 print("Deleting the file...")
-                del data.files[filename]
-                save(file, data)
+                del locker.files[filename]
+                locker.save(file)
                 clrscr()
                 print("File deleted successfully...\n")
                 continue
 
             elif choice == "extract":
-                extractpath = input("\nEnter the location to extract the file.\nPress 'Enter' to extract at the locker location.\n")
-                if extractpath.lower() == 'exit':
+                extractpath = input("\nEnter the location to extract the file ('!' to cancel):\n")
+                if extractpath == '!':
                     clrscr()
                     continue
 
-                if extractpath != '':
-                    extractpath = extractpath + '\\' + filename
+                extractpath = os.path.join(extractpath, filename)
 
-                else:
-                    extractpath = defaultpath + filename
                 try:
                     print("Extracting the file...")
                     with open(extractpath, 'wb') as f:
-                        f.write(decrypt(None, key, 0, filebytes = data.files[filename]))
+                        locker_file = locker.files[filename]
+                        f.write(decrypt(locker.pwd, locker_file['nonce'], filebytes = locker_file['ciphertext']))
 
                 except FileNotFoundError:
                     clrscr()
@@ -310,35 +278,34 @@ def clrscr():
 # Main Program--------------------------------------------------------------------------------------------------
 
 def main():
-
     global file
+
     if len(sys.argv) >= 2:
         file = sys.argv[1]
+        os.chdir(os.path.dirname(file))
         key = pwinput("Enter key: ")
         clrscr()
         try:
-            print("You can type 'exit' anytime while using this application to go back.\n")
             openLocker(file, key)
         except LockerError:
             print('Invaild key!!')
-            e = input('Press Enter to exit the window...\n')
+            input('Press Enter to exit the window...\n')
             sys.exit()
         except:
             print("Something went wrong...")
-            e = input('Press Enter to exit the window...\n')
+            input('Press Enter to exit the window...\n')
             sys.exit()
         sys.exit()
 
 
-    print("You can type 'exit' anytime while using this application to go back.\n")
     while True:
         print('What should we do?\n1. Open a locker\n2. Create new locker\n3. Exit')
         choice = input('Enter your choice no.: ')
 
         if choice == '1':
-            file = input("Enter the filename with path: ")
+            file = input("Enter path for .lkr file (Leave empty to cancel): ")
 
-            if file.lower() == 'exit':
+            if not file:
                 clrscr()
                 continue
 
@@ -350,9 +317,9 @@ def main():
                 print(f'Such file does not exist!\n')
                 continue
 
-            key = pwinput("Enter key: ")
+            key = pwinput("Enter key (Leave empty to cancel): ")
             clrscr()
-            if key.lower() == 'exit':
+            if not key:
                 clrscr()
                 continue
 
@@ -364,25 +331,23 @@ def main():
                 continue
 
         elif choice == '2':
-            file = input("Enter name and path for the new Locker file: ")
-            if file.lower() == 'exit':
+            file = input("Enter name and path for the new Locker file (Leave empty to cancel): ")
+            if not file:
                 clrscr()
                 continue
+
             if not file.endswith('.lkr'):
                 file = file + '.lkr'
 
-            key = pwinput("Enter key for the locker (Warning: Once entered, the key cannot be changed for this file):\n")
+            key = pwinput("Enter key for the locker (Leave empty to cancel): ")
             clrscr()
-            if key.lower() == 'exit':
+            if not key:
                 continue
 
             if len(key) > 32 or len(key) < 5:
                 print("Key should be from 5 to 32 characters long!\nLocker creation failed!!\n")
                 continue
 
-            if '~' in key:
-                print("Keys and passwords cannot contain '~'!\nLocker creation failed!!\n")
-                continue
             try:
                 newLocker(file, key)
             except FileNotFoundError:
