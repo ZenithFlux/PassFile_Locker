@@ -6,9 +6,9 @@ from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout
 from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QLineEdit, QPushButton, QLabel, QListWidget, QMessageBox
 from PyQt5.QtGui import QFont, QIcon
 
-from functions.gui_func import *
-from functions.dialogs import AddPasswordDialog
-from functions.locker import Locker
+from tools.gui_func import *
+from tools.dialogs import AddPasswordDialog
+from tools.locker import Locker
 
 
 class FirstPage(QWidget):

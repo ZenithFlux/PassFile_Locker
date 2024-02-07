@@ -105,11 +105,9 @@ class AddPasswordDialog(QDialog):
             InfoMessageBox("Both website name and password are required to complete the action!")
             return
 
-        pwd_dict = locker.passwords['data']
-
-        if not self.site in pwd_dict:
+        if not self.site in locker.pwd_dict:
             QListWidgetItem(self.site, listWidget)
 
-        pwd_dict[self.site] = self.password
+        locker.pwd_dict[self.site] = self.password
         locker.save(path)
         self.close()

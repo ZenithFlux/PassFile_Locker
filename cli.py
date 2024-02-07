@@ -4,8 +4,7 @@ import sys
 
 from pwinput import pwinput
 
-from functions import decrypt
-from functions.locker import *
+from tools.locker import *
 
 def newLocker(file, key):
     print('Creating new Locker...')
@@ -35,22 +34,21 @@ def passmode(locker: Locker):
     global file
 
     while True:
-        passwords = locker.passwords['data']
         print("---- {0} ----\n--Password Section--".format(os.path.basename(file)))
 
-        if not passwords:
+        if not locker.pwd_dict:
             print('\nNo password added yet...')
 
         else:
             print("\nSites for which passwords have been found -")
             n=0
-            for site in passwords.keys():
+            for site in locker.pwd_dict.keys():
                 n += 1
                 print(f'{n}. {site}')
             del n
             print()
 
-        if passwords:
+        if locker.pwd_dict:
             print('Enter the number of a site to view/change/delete your password entered for the site.')
         print("Type 'add' to add a new password.\nType 'f' to go into Files Section.\nType 'exit' to close the locker.")
         choice = input().lower()
@@ -72,7 +70,7 @@ def passmode(locker: Locker):
                 clrscr()
                 continue
 
-            if site in passwords:
+            if site in locker.pwd_dict:
                 print('Password for this site already exists!\n')
                 continue
 
@@ -82,14 +80,14 @@ def passmode(locker: Locker):
             if not newPass:
                 continue
 
-            passwords[site] = newPass
+            locker.pwd_dict[site] = newPass
             locker.save(file)
             print('New password added successfully...\n')
             continue
 
-        elif passwords and choice.isnumeric() and int(choice) <= len(passwords.keys()):
-            site = list(passwords.keys())[int(choice) - 1]
-            password = passwords[site]
+        elif locker.pwd_dict and choice.isnumeric() and int(choice) <= len(locker.pwd_dict.keys()):
+            site = list(locker.pwd_dict.keys())[int(choice) - 1]
+            password = locker.pwd_dict[site]
             print(f"\nPassword for '{site}' is:\n{password}")
             print("Type 'change' to change this password.")
             print("Type 'delete' to delete this password. Password can't be retrieved once deleted.")
@@ -108,13 +106,13 @@ def passmode(locker: Locker):
                 if not newPass:
                     continue
 
-                passwords[site] = newPass
+                locker.pwd_dict[site] = newPass
                 locker.save(file)
                 print('Password updated successfully...\n')
                 continue
 
             elif choice == 'delete':
-                del passwords[site]
+                del locker.pwd_dict[site]
                 locker.save(file)
                 print("Password deleted successfully...\n")
                 continue
@@ -212,8 +210,7 @@ def filemode(locker: Locker):
                     continue
 
                 print("Renaming the file...")
-                locker.files[newName] = locker.files[filename]
-                del locker.files[filename]
+                locker.rename_file(filename, newName)
                 locker.save(file)
 
                 clrscr()
@@ -222,7 +219,7 @@ def filemode(locker: Locker):
 
             elif choice == "delete":
                 print("Deleting the file...")
-                del locker.files[filename]
+                locker.remove_file(filename)
                 locker.save(file)
                 clrscr()
                 print("File deleted successfully...\n")
@@ -239,8 +236,7 @@ def filemode(locker: Locker):
                 try:
                     print("Extracting the file...")
                     with open(extractpath, 'wb') as f:
-                        locker_file = locker.files[filename]
-                        f.write(decrypt(locker.pwd, locker_file['nonce'], filebytes = locker_file['ciphertext']))
+                        f.write(locker.get_file(filename))
 
                 except FileNotFoundError:
                     clrscr()

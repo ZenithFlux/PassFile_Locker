@@ -5,7 +5,6 @@ from PyQt5.QtWidgets import QFileDialog, QLineEdit, QListWidgetItem, QInputDialo
 
 from .smallDialogs import *
 from . import dialogs
-from .encrypter import decrypt
 from .locker import Locker
 
 
@@ -36,7 +35,7 @@ def show_released(textbox1, textbox2):
     textbox2.setEchoMode(QLineEdit.Password)
 
 def fill_pwList(locker: Locker, listWidget):
-    for site in locker.passwords['data'].keys():
+    for site in locker.pwd_dict.keys():
         QListWidgetItem(site, listWidget)
 
 def fill_fileList(locker: Locker, listWidget):
@@ -97,12 +96,12 @@ def pw_veiw(locker: Locker, selected):
 
     elif len(selected) == 1:
         site = selected[0].text()
-        dialogs.ViewPasswordDialog(site, locker.passwords['data'][site])
+        dialogs.ViewPasswordDialog(site, locker.pwd_dict[site])
 
 
 def pw_delete(path, locker: Locker, listWidget, selected):
     for site in selected:
-        del locker.passwords['data'][site.text()]
+        del locker.pwd_dict[site.text()]
         listWidget.takeItem(listWidget.row(site))
 
     locker.save(path)
@@ -138,8 +137,7 @@ def file_rename(path, locker: Locker, listWidget, selected):
         newName = newName.strip()
 
         if ok and newName and newName != selected[0].text():
-            locker.files[newName] = locker.files[selected[0].text()]
-            del locker.files[selected[0].text()]
+            locker.rename_file(selected[0].text(), newName)
             locker.save(path)
 
             listWidget.takeItem(listWidget.row(selected[0]))
@@ -161,13 +159,12 @@ def file_extract(locker: Locker, selected):
             filepath = os.path.join(folder, filename)
 
             with open(filepath, 'wb') as f:
-                locker_file = locker.files[filename]
-                f.write(decrypt(locker.pwd, locker_file['nonce'], filebytes = locker_file['ciphertext']))
+                f.write(locker.get_file(filename))
 
 
 def file_delete(path, locker: Locker, listWidget, selected):
     for file in selected:
-        del locker.files[file.text()]
+        locker.remove_file(file.text())
         listWidget.takeItem(listWidget.row(file))
 
     locker.save(path)
