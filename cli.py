@@ -4,7 +4,7 @@ import sys
 
 from pwinput import pwinput
 
-from tools.locker import *
+from tools.locker import Locker, LockerError
 
 def newLocker(file, key):
     print('Creating new Locker...')
@@ -27,7 +27,7 @@ def openLocker(file, key):
     if locker.unlock(key):
         passmode(locker)
     else:
-        raise LockerError('Invalid key')
+        raise LockerError('Wrong password')
 
 
 def passmode(locker: Locker):
@@ -50,7 +50,8 @@ def passmode(locker: Locker):
 
         if locker.pwd_dict:
             print('Enter the number of a site to view/change/delete your password entered for the site.')
-        print("Type 'add' to add a new password.\nType 'f' to go into Files Section.\nType 'exit' to close the locker.")
+        print("Type 'add' to add a new password.\nType 'f' to go to Files Section.")
+        print("Type 'change password' to change locker password.\nType 'exit' to close the locker.")
         choice = input().lower()
 
         if choice == 'f':
@@ -61,8 +62,30 @@ def passmode(locker: Locker):
             else:
                 continue
 
-        if choice == 'exit':
+        elif choice == 'exit':
             return
+
+        elif choice == 'change password':
+            new_pwd = pwinput("\nEnter a new password (Leave empty to cancel): ")
+            if not new_pwd:
+                clrscr()
+                continue
+
+            if len(new_pwd) < 5:
+                clrscr()
+                print("Password should be at least 5 characters long!\nPassword change failed!!\n")
+                continue
+
+            cnew_pwd = pwinput("Confirm password: ")
+            if cnew_pwd != new_pwd:
+                clrscr()
+                print("Password Mismatch!\nPassword change failed!!\n")
+                continue
+
+            locker.change_password(new_pwd)
+            locker.save(file)
+            clrscr()
+            print("Password changed!\n")
 
         elif choice == 'add':
             site = input("Enter a new site name to store password for (Leave empty to cancel): ")
@@ -126,6 +149,7 @@ def passmode(locker: Locker):
             print('Invalid input!\n')
             continue
 
+
 def filemode(locker: Locker):
     global file
     print("This locker is designed to encrypt important documents. Since encryption is very resource intensive,")
@@ -150,7 +174,7 @@ def filemode(locker: Locker):
         if locker.files:
             print('Enter the number of a file to extract/rename/delete that file.')
 
-        print("Type 'add' to add a new file.\nType 'p' to go into Password Section.\nType 'exit' to close the locker.")
+        print("Type 'add' to add a new file.\nType 'p' to go to Password Section.\nType 'exit' to close the locker.")
         choice = input().lower()
 
         if choice == 'p':
@@ -175,7 +199,7 @@ def filemode(locker: Locker):
                     continue
 
                 with open(filename, 'rb') as f:
-                    print("Processing the file...")
+                    print("\nProcessing the file...")
                     locker.add_file(os.path.basename(filename), f.read())
 
             except FileNotFoundError:
@@ -194,7 +218,7 @@ def filemode(locker: Locker):
 
         elif locker.files and choice.isnumeric() and int(choice) <= len(locker.files):
             filename = list(locker.files.keys())[int(choice) - 1]
-            print(f"--- {filename} ---\n")
+            print(f"\n--- {filename} ---\n")
             print("Type 'extract' to extract the file.\nType 'rename' to rename it.")
             print("Type 'delete' to remove the file from the locker.\nEnter 'b' to go back to the files list.")
             choice = input().lower()
@@ -209,7 +233,7 @@ def filemode(locker: Locker):
                     clrscr()
                     continue
 
-                print("Renaming the file...")
+                print("\nRenaming the file...")
                 locker.rename_file(filename, newName)
                 locker.save(file)
 
@@ -218,7 +242,7 @@ def filemode(locker: Locker):
                 continue
 
             elif choice == "delete":
-                print("Deleting the file...")
+                print("\nDeleting the file...")
                 locker.remove_file(filename)
                 locker.save(file)
                 clrscr()
@@ -234,7 +258,7 @@ def filemode(locker: Locker):
                 extractpath = os.path.join(extractpath, filename)
 
                 try:
-                    print("Extracting the file...")
+                    print("\nExtracting the file...")
                     with open(extractpath, 'wb') as f:
                         f.write(locker.get_file(filename))
 
@@ -256,7 +280,7 @@ def filemode(locker: Locker):
 
             else:
                 clrscr()
-                print('Invalid Input!\n')
+                print('Invalid input!\n')
                 continue
 
         else:
@@ -268,8 +292,10 @@ def filemode(locker: Locker):
 # Micro Functions----------------------------------------------------------------------------------------------
 
 def clrscr():
-    os.system('cls')
-
+    if os.name == 'nt':
+        os.system('cls')
+    else:
+        os.system('clear')
 
 # Main Program--------------------------------------------------------------------------------------------------
 
@@ -279,12 +305,12 @@ def main():
     if len(sys.argv) >= 2:
         file = sys.argv[1]
         os.chdir(os.path.dirname(file))
-        key = pwinput("Enter key: ")
+        key = pwinput("Enter password: ")
         clrscr()
         try:
             openLocker(file, key)
         except LockerError:
-            print('Invaild key!!')
+            print('Wrong password!!')
             input('Press Enter to exit the window...\n')
             sys.exit()
         except:
@@ -310,10 +336,11 @@ def main():
 
             if not os.path.exists(file):
                 clrscr()
-                print(f'Such file does not exist!\n')
+                print(file)
+                print(f'This file does not exist!\n')
                 continue
 
-            key = pwinput("Enter key (Leave empty to cancel): ")
+            key = pwinput("Enter password (Leave empty to cancel): ")
             clrscr()
             if not key:
                 clrscr()
@@ -323,7 +350,7 @@ def main():
                 openLocker(file, key)
                 clrscr()
             except LockerError:
-                print('Invaild key!!\n')
+                print('Wrong password!!\n')
                 continue
 
         elif choice == '2':
@@ -335,17 +362,27 @@ def main():
             if not file.endswith('.lkr'):
                 file = file + '.lkr'
 
-            key = pwinput("Enter key for the locker (Leave empty to cancel): ")
-            clrscr()
-            if not key:
+            if os.path.dirname(file):
+                os.makedirs(os.path.dirname(file), exist_ok=True)
+
+            pwd = pwinput("Enter password for the locker (Leave empty to cancel): ")
+            if not pwd:
+                clrscr()
                 continue
 
-            if len(key) > 32 or len(key) < 5:
-                print("Key should be from 5 to 32 characters long!\nLocker creation failed!!\n")
+            if len(pwd) < 5:
+                clrscr()
+                print("Password should be at least 5 characters long!\nLocker creation failed!!\n")
+                continue
+
+            cpwd = pwinput("Confirm password: ")
+            if cpwd != pwd:
+                clrscr()
+                print("Password Mismatch!\nLocker creation failed!!\n")
                 continue
 
             try:
-                newLocker(file, key)
+                newLocker(file, pwd)
             except FileNotFoundError:
                 clrscr()
                 print(file)

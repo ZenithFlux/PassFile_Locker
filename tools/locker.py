@@ -13,13 +13,16 @@ class Locker:
         self.passwords: dict[str, bytes] = {}
         self.files: dict[str, dict[str, bytes]] = {}
         self.pwd_dict: dict[str, str] = {}
+        self.pwd = password
 
         self.check_phrase = encrypt_text(password, self.CHECK_PHRASE_PLAINTEXT)
-        self.pwd = password
 
 
     def unlock(self, password: str) -> bool:
-        unlocked = decrypt_text(password, **self.check_phrase) == self.CHECK_PHRASE_PLAINTEXT
+        try:
+            unlocked = decrypt_text(password, **self.check_phrase) == self.CHECK_PHRASE_PLAINTEXT
+        except ValueError:
+            return False
 
         if unlocked:
             self.pwd = password

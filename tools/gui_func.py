@@ -4,8 +4,8 @@ import os
 from PyQt5.QtWidgets import QFileDialog, QLineEdit, QListWidgetItem, QInputDialog
 
 from .smallDialogs import *
-from . import dialogs
 from .locker import Locker
+from .smallDialogs import ViewPasswordDialog
 
 
 '''
@@ -63,29 +63,6 @@ def open_locker(window, LockerWindow):
         else:
             break
 
-def createNewLocker(path, keypair, window, LockerWindow):
-    if keypair[0] != keypair[1]:
-        PasswordMismatch()
-        return
-
-    if not path.endswith('.lkr'):
-        path = path + '.lkr'
-
-    key = keypair[0]
-
-    if len(key) > 32 or len(key) < 5:
-        InfoMessageBox("Passwords length should be between 5 to 32 characters.")
-        return
-
-    if os.path.exists(path):
-        confirm_replace = ReplaceConfirmation()
-        if confirm_replace.reply != QMessageBox.Yes: return
-
-    locker = Locker(key)
-
-    locker.save(path)
-    changeWindow(window, LockerWindow(path, key, locker))
-
 
 # --------------------------Locker Control Functions-------------------------------
 
@@ -96,7 +73,7 @@ def pw_veiw(locker: Locker, selected):
 
     elif len(selected) == 1:
         site = selected[0].text()
-        dialogs.ViewPasswordDialog(site, locker.pwd_dict[site])
+        ViewPasswordDialog(site, locker.pwd_dict[site])
 
 
 def pw_delete(path, locker: Locker, listWidget, selected):
@@ -153,13 +130,14 @@ def file_extract(locker: Locker, selected):
     else:
         return
 
-    if folder:
-        for file in selected:
-            filename = file.text()
-            filepath = os.path.join(folder, filename)
+    if not folder: return
 
-            with open(filepath, 'wb') as f:
-                f.write(locker.get_file(filename))
+    for file in selected:
+        filename = file.text()
+        filepath = os.path.join(folder, filename)
+
+        with open(filepath, 'wb') as f:
+            f.write(locker.get_file(filename))
 
 
 def file_delete(path, locker: Locker, listWidget, selected):

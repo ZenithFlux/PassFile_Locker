@@ -1,17 +1,18 @@
 import sys
 import os
+import pickle
 
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout
+from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout
 from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QLineEdit, QPushButton, QLabel, QListWidget, QMessageBox
 from PyQt5.QtGui import QFont, QIcon
 
 from tools.gui_func import *
-from tools.dialogs import AddPasswordDialog
+from tools.dialogs import AddPasswordDialog, ChangePasswordDialog
 from tools.locker import Locker
 
 
-class FirstPage(QWidget):
+class FirstPage(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("PassFile Locker")
@@ -95,8 +96,7 @@ class NewLockerDialog(QDialog):
         self.password_textbox = QLineEdit(self)
         self.layout3.addWidget(self.password_textbox)
         self.password_textbox.setFixedWidth(180)
-        self.password_textbox.setPlaceholderText("At least 5 characters required")
-        self.password_textbox.setMaxLength(32)
+        self.password_textbox.setPlaceholderText("Minimum 5 characters")
         self.password_textbox.setEchoMode(QLineEdit.Password)
         self.layout3.addSpacing(self.browse_button.width()+7)
 
@@ -110,7 +110,6 @@ class NewLockerDialog(QDialog):
 
         self.cpassword_textbox = QLineEdit(self)
         self.layout4.addWidget(self.cpassword_textbox)
-        self.cpassword_textbox.setMaxLength(32)
         self.cpassword_textbox.setFixedWidth(180)
         self.cpassword_textbox.setEchoMode(QLineEdit.Password)
 
@@ -127,8 +126,32 @@ class NewLockerDialog(QDialog):
         self.button_box.rejected.connect(lambda: changeWindow(self, FirstPage()))
         self.layout.addWidget(self.button_box)
 
-
         self.setFixedSize(self.minimumSizeHint())
+
+
+    def create_new_locker(self, keypair, path):
+        if len(keypair[0]) < 5:
+            InfoMessageBox("Passwords length should be at least 5 characters.")
+            return
+
+        if keypair[0] != keypair[1]:
+            PasswordMismatch()
+            return
+
+        if not path.endswith('.lkr'):
+            path = path + '.lkr'
+
+        key = keypair[0]
+
+        if os.path.exists(path):
+            confirm_replace = ReplaceConfirmation()
+            if confirm_replace.reply != QMessageBox.Yes: return
+
+        locker = Locker(key)
+
+        locker.save(path)
+        changeWindow(self, LockerWindow(path, locker))
+
 
     def ok_clicked(self):
         location = self.location_textbox.text().strip()
@@ -147,13 +170,14 @@ class NewLockerDialog(QDialog):
             return
 
         self._lockerpath = os.path.join(location, name)
-        createNewLocker(self._lockerpath, (self.password_textbox.text(), self.cpassword_textbox.text()), self, LockerWindow)
+        self.create_new_locker((self.password_textbox.text(), self.cpassword_textbox.text()), self._lockerpath)
+
 
 # Size of the List Boxes in the LockerWindow
 SIZEX = 230
 SIZEY = 400
 
-class LockerWindow(QWidget):
+class LockerWindow(QDialog):
     def __init__(self, path, locker: Locker):
         super().__init__()
         self.setWindowTitle(os.path.basename(path) + " - PassFile Locker")
@@ -162,8 +186,8 @@ class LockerWindow(QWidget):
         self.setLayout(self.base_layout)
         self.layout = QHBoxLayout()
         self.base_layout.addLayout(self.layout)
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
         self.initUI(path, locker)
-
 
 
     def initUI(self, path, locker: Locker):
@@ -183,6 +207,7 @@ class LockerWindow(QWidget):
         self.pw_list.setFixedSize(SIZEX, SIZEY)
         self.pw_list.setSortingEnabled(True)
         self.pw_list.setSelectionMode(QListWidget.ExtendedSelection)
+        self.pw_list.itemDoubleClicked.connect(lambda: pw_veiw(locker, self.pw_list.selectedItems()))
         fill_pwList(locker, self.pw_list)
 
         self.layout111 = QVBoxLayout()
@@ -225,6 +250,7 @@ class LockerWindow(QWidget):
         self.file_list.setSelectionMode(QListWidget.ExtendedSelection)
         self.file_list.setSortingEnabled(True)
         self.file_list.setFixedSize(SIZEX, SIZEY)
+        self.file_list.itemDoubleClicked.connect(lambda: file_extract(locker, self.file_list.selectedItems()))
         fill_fileList(locker, self.file_list)
 
         self.layout211 = QVBoxLayout()
@@ -252,10 +278,12 @@ class LockerWindow(QWidget):
         self.fileDelete.setText("Delete")
         self.fileDelete.clicked.connect(lambda: DeleteConfirmation("file", path, locker, self))
 
-
         self.layout211.addStretch(1)
 
-        self.base_layout.addSpacing(30)
+        self.changePwd = QPushButton(self)
+        self.base_layout.addWidget(self.changePwd, alignment=QtCore.Qt.AlignLeft)
+        self.changePwd.setText("Change Locker Password")
+        self.changePwd.clicked.connect(lambda: ChangePasswordDialog(path, locker))
 
         self.button_box = QDialogButtonBox(self)
         self.base_layout.addWidget(self.button_box)
@@ -303,12 +331,21 @@ def main():
         path = sys.argv[1]
         app.setWindowIcon(QIcon(os.path.join(os.path.dirname(sys.argv[0]), 'icon.ico')))
 
+        with open(path, 'rb') as f:
+            try:
+                locker: Locker = pickle.load(f)
+            except pickle.UnpicklingError:
+                print(f"Error: {path} is not a locker")
+                sys.exit()
+
+        if not isinstance(locker, Locker):
+            print(f"Error: {path} is not a locker")
+            sys.exit()
+
         while True:
             key, ok = QInputDialog.getText(None, "Enter password", "Password:", QLineEdit.Password)
             if not ok: sys.exit()
 
-            with open(path, 'rb') as f:
-                locker: Locker = pickle.load(f)
 
             if key and locker.unlock(key):
                 win = LockerWindow(path, locker)

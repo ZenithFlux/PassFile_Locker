@@ -26,13 +26,13 @@ def decrypt_text(password: str, iv: bytes, ciphertext: bytes) -> str:
 def encrypt_file(password: str, filedata: bytes) -> dict[str, bytes]:
     key = pwd2key(password)
     nonce = get_random_bytes(12)
-    cipher = ChaCha20.new(key, nonce)
+    cipher = ChaCha20.new(key=key, nonce=nonce)
     return {'ciphertext': cipher.encrypt(filedata), 'nonce': nonce}
 
 
 def decrypt_file(password: str, nonce: bytes, ciphertext: bytes) -> bytes:
     key = pwd2key(password)
-    cipher = ChaCha20.new(key, nonce)
+    cipher = ChaCha20.new(key=key, nonce=nonce)
     return cipher.decrypt(ciphertext)
 
 
