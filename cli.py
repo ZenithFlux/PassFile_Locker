@@ -8,8 +8,8 @@ from tools.locker import Locker, LockerError
 
 def newLocker(file, key):
     print('Creating new Locker...')
-    locker = Locker(key)
 
+    locker = Locker(key)
     locker.save(file)
 
     clrscr()
@@ -303,8 +303,8 @@ def main():
     global file
 
     if len(sys.argv) >= 2:
-        file = sys.argv[1]
-        os.chdir(os.path.dirname(file))
+        dir, file = os.path.split(sys.argv[1])
+        if dir: os.chdir(dir)
         key = pwinput("Enter password: ")
         clrscr()
         try:
@@ -359,12 +359,6 @@ def main():
                 clrscr()
                 continue
 
-            if not file.endswith('.lkr'):
-                file = file + '.lkr'
-
-            if os.path.dirname(file):
-                os.makedirs(os.path.dirname(file), exist_ok=True)
-
             pwd = pwinput("Enter password for the locker (Leave empty to cancel): ")
             if not pwd:
                 clrscr()
@@ -381,12 +375,14 @@ def main():
                 print("Password Mismatch!\nLocker creation failed!!\n")
                 continue
 
-            try:
-                newLocker(file, pwd)
-            except FileNotFoundError:
-                clrscr()
-                print(file)
-                print('No such folder exists!\n')
+            if not file.endswith('.lkr'):
+                file = file + '.lkr'
+
+            if os.path.dirname(file):
+                os.makedirs(os.path.dirname(file), exist_ok=True)
+
+            newLocker(file, pwd)
+            clrscr()
 
         elif choice == '3' or choice.lower() == 'exit':
             sys.exit()

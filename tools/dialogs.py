@@ -76,8 +76,77 @@ class AddPasswordDialog(QDialog):
 
 
 
-
 class ChangePasswordDialog(QDialog):
+    def __init__(self, path, locker: Locker, selected):
+        if len(selected) > 1:
+            InfoMessageBox("Only one password can be changed at a time!")
+            return
+        elif len(selected) == 0:
+            return
+
+        super().__init__()
+        self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
+        self.setWindowTitle("Change Website Password")
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+
+        self.layout1 = QHBoxLayout()
+        self.layout.addLayout(self.layout1)
+
+        self.layout1.addStretch(1)
+
+        self.site_label = QLabel(self)
+        self.layout1.addWidget(self.site_label)
+        self.site_label.setText(selected[0].text())
+        self.site_label.setFont(QFont(QFont().defaultFamily(), 20))
+
+        self.layout1.addStretch(1)
+
+        self.layout.addSpacing(20)
+
+        self.layout2 = QHBoxLayout()
+        self.layout.addLayout(self.layout2)
+
+        self.password_label = QLabel(self)
+        self.layout2.addWidget(self.password_label)
+        self.password_label.setText("New Password:")
+
+        self.password_textbox = QLineEdit(self)
+        self.layout2.addWidget(self.password_textbox)
+        self.password_textbox.setFixedWidth(180)
+        self.password_textbox.setEchoMode(QLineEdit.Password)
+
+        self.show_passwords = QPushButton(self)
+        self.layout2.addWidget(self.show_passwords)
+        self.show_passwords.setText("Show")
+        self.show_passwords.pressed.connect(lambda: self.password_textbox.setEchoMode(QLineEdit.Normal))
+        self.show_passwords.released.connect(lambda: self.password_textbox.setEchoMode(QLineEdit.Password))
+
+
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.button_box.accepted.connect(lambda: self.ok_clicked(path, locker, selected))
+        self.button_box.rejected.connect(self.close)
+        self.layout.addWidget(self.button_box)
+
+
+        self.setFixedSize(self.minimumSizeHint())
+        self.exec()
+
+
+    def ok_clicked(self, path, locker: Locker, selected):
+        new_pwd = self.password_textbox.text()
+
+        if not new_pwd:
+            InfoMessageBox("New Password is required to complete the action!")
+            return
+
+        locker.pwd_dict[selected[0].text()] = new_pwd
+        locker.save(path)
+        self.close()
+
+
+
+class ChangeLockerPasswordDialog(QDialog):
     def __init__(self, path, locker: Locker):
         super().__init__()
         self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)

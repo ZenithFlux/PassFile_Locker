@@ -66,9 +66,9 @@ def open_locker(window, LockerWindow):
 
 # --------------------------Locker Control Functions-------------------------------
 
-def pw_veiw(locker: Locker, selected):
+def pw_view(locker: Locker, selected):
     if len(selected) > 1:
-        InfoMessageBox("Only one password can be veiwed at a time!")
+        InfoMessageBox("Only one password can be viewed at a time!")
         return
 
     elif len(selected) == 1:

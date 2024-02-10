@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QLineEdit, QPushButton, Q
 from PyQt5.QtGui import QFont, QIcon
 
 from tools.gui_func import *
-from tools.dialogs import AddPasswordDialog, ChangePasswordDialog
+from tools.dialogs import AddPasswordDialog, ChangeLockerPasswordDialog, ChangePasswordDialog
 from tools.locker import Locker
 
 
@@ -207,7 +207,7 @@ class LockerWindow(QDialog):
         self.pw_list.setFixedSize(SIZEX, SIZEY)
         self.pw_list.setSortingEnabled(True)
         self.pw_list.setSelectionMode(QListWidget.ExtendedSelection)
-        self.pw_list.itemDoubleClicked.connect(lambda: pw_veiw(locker, self.pw_list.selectedItems()))
+        self.pw_list.itemDoubleClicked.connect(lambda: pw_view(locker, self.pw_list.selectedItems()))
         fill_pwList(locker, self.pw_list)
 
         self.layout111 = QVBoxLayout()
@@ -223,7 +223,12 @@ class LockerWindow(QDialog):
         self.pwView = QPushButton(self)
         self.layout111.addWidget(self.pwView)
         self.pwView.setText("View")
-        self.pwView.clicked.connect(lambda: pw_veiw(locker, self.pw_list.selectedItems()))
+        self.pwView.clicked.connect(lambda: pw_view(locker, self.pw_list.selectedItems()))
+
+        self.pwChange = QPushButton(self)
+        self.layout111.addWidget(self.pwChange)
+        self.pwChange.setText("Change")
+        self.pwChange.clicked.connect(lambda: ChangePasswordDialog(path, locker, self.pw_list.selectedItems()))
 
         self.pwDelete = QPushButton(self)
         self.layout111.addWidget(self.pwDelete)
@@ -283,7 +288,7 @@ class LockerWindow(QDialog):
         self.changePwd = QPushButton(self)
         self.base_layout.addWidget(self.changePwd, alignment=QtCore.Qt.AlignLeft)
         self.changePwd.setText("Change Locker Password")
-        self.changePwd.clicked.connect(lambda: ChangePasswordDialog(path, locker))
+        self.changePwd.clicked.connect(lambda: ChangeLockerPasswordDialog(path, locker))
 
         self.button_box = QDialogButtonBox(self)
         self.base_layout.addWidget(self.button_box)
