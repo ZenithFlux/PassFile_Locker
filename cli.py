@@ -49,7 +49,7 @@ def passmode(locker: Locker):
             print()
 
         if locker.pwd_dict:
-            print('Enter the number of a site to view/change/delete your password entered for the site.')
+            print('Enter the site number to view/change/delete the password stored for that site.')
         print("Type 'add' to add a new password.\nType 'f' to go to Files Section.")
         print("Type 'change password' to change locker password.\nType 'exit' to close the locker.")
         choice = input().lower()
@@ -172,7 +172,7 @@ def filemode(locker: Locker):
             print()
 
         if locker.files:
-            print('Enter the number of a file to extract/rename/delete that file.')
+            print('Enter the file number to extract/rename/delete that file.')
 
         print("Type 'add' to add a new file.\nType 'p' to go to Password Section.\nType 'exit' to close the locker.")
         choice = input().lower()
@@ -311,11 +311,12 @@ def main():
             openLocker(file, key)
         except LockerError:
             print('Wrong password!!')
-            input('Press Enter to exit the window...\n')
+            input('Press Enter to exit...\n')
             sys.exit()
         except:
+            clrscr()
             print("Something went wrong...")
-            input('Press Enter to exit the window...\n')
+            input('Press Enter to exit...\n')
             sys.exit()
         sys.exit()
 
@@ -351,6 +352,10 @@ def main():
                 clrscr()
             except LockerError:
                 print('Wrong password!!\n')
+                continue
+            except:
+                clrscr()
+                print('Something went wrong!!\n')
                 continue
 
         elif choice == '2':

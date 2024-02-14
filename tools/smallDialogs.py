@@ -43,12 +43,12 @@ class InfoMessageBox(QMessageBox):
         self.show()
         self.exec()
 
-class WrongPassword(QMessageBox):
-    def __init__(self):
+class CriticalMessageBox(QMessageBox):
+    def __init__(self, title, message):
         super().__init__()
-        self.setWindowTitle("Wrong Password")
+        self.setWindowTitle(title)
         self.setIcon(QMessageBox.Critical)
-        self.setText("Wrong Password")
+        self.setText(message)
         self.setStandardButtons(QMessageBox.Ok)
         self.show()
         self.exec()
@@ -71,6 +71,7 @@ class ViewPasswordDialog(QDialog):
         self.layout1.addWidget(self.site_label)
         self.site_label.setText(site)
         self.site_label.setFont(QFont(QFont().defaultFamily(), 20))
+        self.site_label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse)
 
         self.layout1.addStretch(1)
 
@@ -81,8 +82,14 @@ class ViewPasswordDialog(QDialog):
 
         self.pass_label = QLabel(self)
         self.layout2.addWidget(self.pass_label)
-        self.pass_label.setText(f"Password: {password}")
+        self.pass_label.setText("Password:")
         self.pass_label.setFont(QFont(QFont().defaultFamily(), 10))
+
+        self.pwd = QLabel(self)
+        self.layout2.addWidget(self.pwd)
+        self.pwd.setText(password)
+        self.pwd.setFont(QFont(QFont().defaultFamily(), 10))
+        self.pwd.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse)
 
         self.layout2.addStretch(1)
 

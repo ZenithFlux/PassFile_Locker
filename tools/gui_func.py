@@ -2,6 +2,7 @@ import pickle
 import os
 
 from PyQt5.QtWidgets import QFileDialog, QLineEdit, QListWidgetItem, QInputDialog
+from PyQt5 import QtCore
 
 from .smallDialogs import *
 from .locker import Locker
@@ -47,19 +48,30 @@ def open_locker(window, LockerWindow):
     if not path:
         return
 
+    with open(path, 'rb') as f:
+        try:
+            locker: Locker = pickle.load(f)
+        except pickle.UnpicklingError:
+            CriticalMessageBox("Error", f"{path} is not a locker!")
+            return
+        except:
+            CriticalMessageBox("Error", "Something went wrong!")
+            return
+
+    if not isinstance(locker, Locker):
+        CriticalMessageBox("Error", f"{path} is not a locker!")
+        return
+
     while True:
-        key, ok = QInputDialog.getText(None, "Enter password", "Password:", QLineEdit.Password)
-
+        key, ok = QInputDialog.getText(None, "Enter password", "Password:", QLineEdit.Password,
+                                       flags=QtCore.Qt.WindowCloseButtonHint)
         if ok:
-            with open(path, 'rb') as f:
-                locker: Locker = pickle.load(f)
-
             if key and locker.unlock(key):
                 changeWindow(window, LockerWindow(path, locker))
                 break
 
             else:
-                WrongPassword()
+                CriticalMessageBox("Wrong Password", "Wrong Password")
         else:
             break
 
@@ -110,7 +122,8 @@ def file_add(path, locker: Locker, listWidget):
 
 def file_rename(path, locker: Locker, listWidget, selected):
     if len(selected) == 1:
-        newName, ok = QInputDialog.getText(None, "Rename File", "File Name:", text = selected[0].text())
+        newName, ok = QInputDialog.getText(None, "Rename File", "File Name:", text = selected[0].text(),
+                                           flags=QtCore.Qt.WindowCloseButtonHint)
         newName = newName.strip()
 
         if ok and newName and newName != selected[0].text():

@@ -5,3 +5,6 @@ _*
 # dev folders
 .venv
 .bashinit
+/build
+/dist
+/*.spec

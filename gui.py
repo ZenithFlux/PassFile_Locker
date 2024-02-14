@@ -16,7 +16,7 @@ class FirstPage(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("PassFile Locker")
-        self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowMinMaxButtonsHint)
+        self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
@@ -181,7 +181,7 @@ class LockerWindow(QDialog):
     def __init__(self, path, locker: Locker):
         super().__init__()
         self.setWindowTitle(os.path.basename(path) + " - PassFile Locker")
-        self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowMinMaxButtonsHint)
+        self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
         self.base_layout = QVBoxLayout()
         self.setLayout(self.base_layout)
         self.layout = QHBoxLayout()
@@ -334,23 +334,26 @@ def main():
     # Following code will initiate the app if app is opened using a locker file
     if len(sys.argv) >= 2:
         path = sys.argv[1]
-        app.setWindowIcon(QIcon(os.path.join(os.path.dirname(sys.argv[0]), 'icon.ico')))
+        app.setWindowIcon(QIcon(os.path.join(os.path.dirname(sys.argv[0]), 'icon.png')))
 
         with open(path, 'rb') as f:
             try:
                 locker: Locker = pickle.load(f)
             except pickle.UnpicklingError:
-                print(f"Error: {path} is not a locker")
+                CriticalMessageBox("Error", f"{path} is not a locker!")
+                sys.exit()
+            except:
+                CriticalMessageBox("Error", "Something went wrong!")
                 sys.exit()
 
         if not isinstance(locker, Locker):
-            print(f"Error: {path} is not a locker")
+            CriticalMessageBox("Error", f"{path} is not a locker!")
             sys.exit()
 
         while True:
-            key, ok = QInputDialog.getText(None, "Enter password", "Password:", QLineEdit.Password)
+            key, ok = QInputDialog.getText(None, "Enter password", "Password:", QLineEdit.Password,
+                                           flags=QtCore.Qt.WindowCloseButtonHint)
             if not ok: sys.exit()
-
 
             if key and locker.unlock(key):
                 win = LockerWindow(path, locker)
@@ -358,11 +361,11 @@ def main():
                 sys.exit(app.exec_())
 
             else:
-                WrongPassword()
+                CriticalMessageBox("Wrong Password", "Wrong Password")
                 continue
 
     # Following code will initiate the app if app is opened directly from .exe
-    app.setWindowIcon(QIcon("icon.ico"))
+    app.setWindowIcon(QIcon("icon.png"))
     win = FirstPage()
     win.show()
     sys.exit(app.exec_())

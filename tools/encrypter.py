@@ -25,7 +25,7 @@ def decrypt_text(password: str, iv: bytes, ciphertext: bytes) -> str:
 
 def encrypt_file(password: str, filedata: bytes) -> dict[str, bytes]:
     key = pwd2key(password)
-    nonce = get_random_bytes(12)
+    nonce = get_random_bytes(24)
     cipher = ChaCha20.new(key=key, nonce=nonce)
     return {'ciphertext': cipher.encrypt(filedata), 'nonce': nonce}
 
