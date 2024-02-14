@@ -1,0 +1,10 @@
+# ignore filenames starting with underscore except when ending with __.py
+_*
+!*__.py
+
+# dev folders
+.venv
+.bashinit
+/build
+/dist
+/*.spec
