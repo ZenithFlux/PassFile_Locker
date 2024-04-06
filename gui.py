@@ -70,7 +70,7 @@ class NewLockerDialog(QDialog):
         self.layout1.addWidget(self.browse_button)
         self.browse_button.setText("Browse...")
         self.browse_button.setFixedSize(self.browse_button.minimumSizeHint())
-        self.browse_button.clicked.connect(lambda: browse_clicked(self.location_textbox))
+        self.browse_button.clicked.connect(lambda: browse_clicked(self.location_textbox, self))
 
 
         self.layout2 = QHBoxLayout()
@@ -255,7 +255,7 @@ class LockerWindow(QDialog):
         self.file_list.setSelectionMode(QListWidget.ExtendedSelection)
         self.file_list.setSortingEnabled(True)
         self.file_list.setFixedSize(SIZEX, SIZEY)
-        self.file_list.itemDoubleClicked.connect(lambda: file_extract(locker, self.file_list.selectedItems()))
+        self.file_list.itemDoubleClicked.connect(lambda: file_extract(locker, self.file_list.selectedItems(), self))
         fill_fileList(locker, self.file_list)
 
         self.layout211 = QVBoxLayout()
@@ -266,7 +266,7 @@ class LockerWindow(QDialog):
         self.fileAdd = QPushButton(self)
         self.layout211.addWidget(self.fileAdd)
         self.fileAdd.setText("Add")
-        self.fileAdd.clicked.connect(lambda: file_add(path, locker, self.file_list))
+        self.fileAdd.clicked.connect(lambda: file_add(path, locker, self.file_list, self))
 
         self.fileRename = QPushButton(self)
         self.layout211.addWidget(self.fileRename)
@@ -276,7 +276,7 @@ class LockerWindow(QDialog):
         self.fileExtract = QPushButton(self)
         self.layout211.addWidget(self.fileExtract)
         self.fileExtract.setText("Extract")
-        self.fileExtract.clicked.connect(lambda: file_extract(locker, self.file_list.selectedItems()))
+        self.fileExtract.clicked.connect(lambda: file_extract(locker, self.file_list.selectedItems(), self))
 
         self.fileDelete = QPushButton(self)
         self.layout211.addWidget(self.fileDelete)
@@ -330,11 +330,11 @@ class DeleteConfirmation(QMessageBox):
 
 def main():
     app = QApplication(sys.argv)
+    app.setWindowIcon(QIcon(os.path.join(os.path.dirname(sys.argv[0]), 'icon.png')))
 
     # Following code will initiate the app if app is opened using a locker file
     if len(sys.argv) >= 2:
         path = sys.argv[1]
-        app.setWindowIcon(QIcon(os.path.join(os.path.dirname(sys.argv[0]), 'icon.png')))
 
         with open(path, 'rb') as f:
             try:
@@ -365,7 +365,6 @@ def main():
                 continue
 
     # Following code will initiate the app if app is opened directly from .exe
-    app.setWindowIcon(QIcon("icon.png"))
     win = FirstPage()
     win.show()
     sys.exit(app.exec_())

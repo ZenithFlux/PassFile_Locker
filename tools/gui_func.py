@@ -22,8 +22,8 @@ def changeWindow(prev, next):
     prev.close()
     next.show()
 
-def browse_clicked(textbox):
-    path = str(QFileDialog.getExistingDirectory(None, "Select Location for Locker"))
+def browse_clicked(textbox, parent_win):
+    path = str(QFileDialog.getExistingDirectory(parent_win, "Select Location for Locker"))
 
     textbox.setText(path)
 
@@ -44,7 +44,7 @@ def fill_fileList(locker: Locker, listWidget):
         QListWidgetItem(file, listWidget)
 
 def open_locker(window, LockerWindow):
-    path = QFileDialog.getOpenFileName(None, "Select Locker File", "", "Locker Files (*.lkr);;All Files (*)")[0]
+    path = QFileDialog.getOpenFileName(window, "Select Locker File", "", "Locker Files (*.lkr);;All Files (*)")[0]
     if not path:
         return
 
@@ -96,8 +96,8 @@ def pw_delete(path, locker: Locker, listWidget, selected):
     locker.save(path)
 
 
-def file_add(path, locker: Locker, listWidget):
-    files = QFileDialog.getOpenFileNames(None, "Select file(s) to encrypt", "", "All Files(*)")
+def file_add(path, locker: Locker, listWidget, parent_win):
+    files = QFileDialog.getOpenFileNames(parent_win, "Select file(s) to encrypt", "", "All Files(*)")
 
     for filepath in files[0]:
         filename = os.path.basename(filepath)
@@ -137,9 +137,9 @@ def file_rename(path, locker: Locker, listWidget, selected):
         InfoMessageBox("Only one file can be renamed at a time.")
 
 
-def file_extract(locker: Locker, selected):
+def file_extract(locker: Locker, selected, parent_win):
     if selected:
-        folder = str(QFileDialog.getExistingDirectory(None, "Select folder to extract file(s) in"))
+        folder = str(QFileDialog.getExistingDirectory(parent_win, "Select folder to extract file(s) in"))
     else:
         return
 
