@@ -1,6 +1,8 @@
 # 🔐️ PassFile Locker 
 
-PassFile Locker is a secure password manager and a file encryption application for the people who like to store their passwords themselves instead of an online password manager. 
+[![GitHub Release](https://img.shields.io/github/v/release/ZenithFlux/PassFile_Locker)](https://github.com/ZenithFlux/PassFile_Locker/releases)
+
+PassFile Locker is a secure open source password manager and a file encryption application for the people who like to store their passwords themselves instead of an online password manager. 
 
 It has highly secure encryption for passwords and files. Your passwords are encrypted using the master password you provide and converted into unrecognisable bytes which cannot be read or converted back without knowing the master password.
 
@@ -23,8 +25,8 @@ It has highly secure encryption for passwords and files. Your passwords are encr
 
 ### On Windows
 
-1. Download [passfile-gui-2.0.0-win-x64.zip](https://github.com/ZenithFlux/PassFile_Locker/releases/download/v2.0.0/passfile-gui-2.0.0-win-x64.zip).  
-    If you want the CLI version, download [passfile-cli-2.0.0-win-x64.zip](https://github.com/ZenithFlux/PassFile_Locker/releases/download/v2.0.0/passfile-cli-2.0.0-win-x64.zip). 
+1. Download [passfile-gui-2.0.1-win-x64.zip](https://github.com/ZenithFlux/PassFile_Locker/releases/download/v2.0.1/passfile-gui-2.0.1-win-x64.zip).  
+    If you want the CLI version, download [passfile-cli-2.0.1-win-x64.zip](https://github.com/ZenithFlux/PassFile_Locker/releases/download/v2.0.1/passfile-cli-2.0.1-win-x64.zip). 
 
 2. Extract the zip file. Run ***passfile.exe*** inside the **passfile** folder.
 
@@ -32,8 +34,8 @@ It has highly secure encryption for passwords and files. Your passwords are encr
 
 ### On Linux
 
-1. Download [passfile-gui-2.0.0-linux-x64.zip](https://github.com/ZenithFlux/PassFile_Locker/releases/download/v2.0.0/passfile-gui-2.0.0-linux-x64.zip).  
-    If you want the CLI version, download [passfile-cli-2.0.0-linux-x64.zip](https://github.com/ZenithFlux/PassFile_Locker/releases/download/v2.0.0/passfile-cli-2.0.0-linux-x64.zip). 
+1. Download [passfile-gui-2.0.1-linux-x64.zip](https://github.com/ZenithFlux/PassFile_Locker/releases/download/v2.0.1/passfile-gui-2.0.1-linux-x64.zip).  
+    If you want the CLI version, download [passfile-cli-2.0.1-linux-x64.zip](https://github.com/ZenithFlux/PassFile_Locker/releases/download/v2.0.1/passfile-cli-2.0.1-linux-x64.zip). 
 
 2. Extract the zip file. Run the ***passfile*** executable inside the **passfile** folder.
 
